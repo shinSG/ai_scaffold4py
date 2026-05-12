@@ -13,6 +13,7 @@
 - SSE/WebSocket 流式输出
 - Nacos 服务注册、注销和发现抽象
 - MQ 抽象，预留 RabbitMQ/RocketMQ 扩展点
+- LLM Provider 抽象，内置 echo、OpenAI 兼容接口和 Ollama
 - RAG、Prompt、Memory 扩展点
 - 项目生成脚本
 - 单元测试与集成测试结构
@@ -395,6 +396,86 @@ integrations/rag/adapter.py
 ```
 
 可替换为真实向量库、知识库或检索服务。
+
+### 12.4 LLM Provider
+
+LLM 抽象位于：
+
+```text
+integrations/llm/ports.py
+integrations/llm/factory.py
+integrations/llm/echo_provider.py
+integrations/llm/openai_compatible_provider.py
+integrations/llm/ollama_provider.py
+```
+
+默认 agent 使用 `LLM_PROVIDER` 创建 provider。未配置时使用 `echo`，不会请求外部服务。
+
+支持的 provider：
+
+- `echo`：本地回显，用于开发和测试。
+- `openai` / `openai-compatible` / `qwen` / `dashscope`：调用 OpenAI Chat Completions 兼容接口。
+- `deepseek`：默认 base URL 为 `https://api.deepseek.com/v1`。
+- `ollama`：调用本地 Ollama `/api/generate`。
+
+通用配置：
+
+```env
+LLM_PROVIDER=echo
+LLM_MODEL=echo
+LLM_BASE_URL=
+LLM_API_KEY=
+LLM_TIMEOUT_SECONDS=30
+LLM_TEMPERATURE=0.7
+LLM_TOP_P=1.0
+LLM_TOP_K=0
+LLM_MAX_TOKENS=1024
+LLM_ENABLE_THINKING=false
+LLM_SHOW_REASONING=false
+```
+
+参数说明：
+
+- `LLM_TOP_P` 会传给 OpenAI 兼容接口和 Ollama。
+- `LLM_TOP_K` 大于 `0` 时才会传给 provider；标准 OpenAI 接口不支持时可保持 `0`。
+- `LLM_ENABLE_THINKING=true` 时会向 OpenAI 兼容接口传递 `enable_thinking=true`，适用于支持该字段的模型服务。
+- `LLM_SHOW_REASONING=true` 时，如果 provider 返回 `reasoning_content` 或 `reasoning`，响应会包含该内容；默认关闭。
+
+OpenAI 兼容接口示例：
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your-api-key
+LLM_TOP_P=0.9
+LLM_TOP_K=0
+LLM_ENABLE_THINKING=false
+LLM_SHOW_REASONING=false
+```
+
+Ollama 示例：
+
+```env
+LLM_PROVIDER=ollama
+LLM_MODEL=qwen2.5:7b
+LLM_BASE_URL=http://127.0.0.1:11434
+LLM_TOP_P=0.9
+LLM_TOP_K=40
+```
+
+调用 `/api/agent/run` 时，可通过 `metadata` 控制 agent 和 system prompt：
+
+```json
+{
+  "session_id": "demo",
+  "user_input": "你好",
+  "metadata": {
+    "agent": "llm",
+    "system_prompt": "你是一个简洁的助手"
+  }
+}
+```
 
 ## 13. MQ 扩展
 

@@ -44,6 +44,18 @@ class Settings(BaseSettings):
     rabbitmq_url: str = Field(default="amqp://guest:guest@127.0.0.1:5672/", alias="RABBITMQ_URL")
     rocketmq_namesrv_addr: str = Field(default="127.0.0.1:9876", alias="ROCKETMQ_NAMESRV_ADDR")
 
+    llm_provider: str = Field(default="echo", alias="LLM_PROVIDER")
+    llm_model: str = Field(default="echo", alias="LLM_MODEL")
+    llm_base_url: str | None = Field(default=None, alias="LLM_BASE_URL")
+    llm_api_key: str | None = Field(default=None, alias="LLM_API_KEY")
+    llm_timeout_seconds: float = Field(default=30.0, alias="LLM_TIMEOUT_SECONDS")
+    llm_temperature: float = Field(default=0.7, alias="LLM_TEMPERATURE")
+    llm_top_p: float = Field(default=1.0, alias="LLM_TOP_P")
+    llm_top_k: int = Field(default=0, alias="LLM_TOP_K")
+    llm_max_tokens: int = Field(default=1024, alias="LLM_MAX_TOKENS")
+    llm_enable_thinking: bool = Field(default=False, alias="LLM_ENABLE_THINKING")
+    llm_show_reasoning: bool = Field(default=False, alias="LLM_SHOW_REASONING")
+
     rag_backend: str = Field(default="stub", alias="RAG_BACKEND")
     rag_endpoint: str = Field(default="http://127.0.0.1:9000", alias="RAG_ENDPOINT")
 

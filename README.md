@@ -10,6 +10,7 @@ A baseline Agent service scaffold built with FastAPI.
 - Agent orchestration skeleton
 - Service endpoints and adapters for MCP, A2A and ACP
 - Optional HTTP, MCP, A2A and ACP servers with independent Nacos registration
+- LLM provider abstraction with echo, OpenAI-compatible and Ollama providers
 - MQ abstractions for RocketMQ and RabbitMQ
 - Streaming endpoints with SSE and WebSocket
 - RAG / Prompt / Memory extension points
@@ -109,6 +110,49 @@ Each server can also be registered to Nacos independently:
 - `NACOS_REGISTER_ACP_ENABLED=true` registers `NACOS_ACP_SERVICE_NAME` or `{NACOS_SERVICE_NAME}-acp`
 
 If a server is disabled, its route is not mounted and it is not registered even when the corresponding Nacos registration switch is enabled.
+
+## LLM Provider
+
+Agents use `LLM_PROVIDER` to select the model provider. The default is `echo` for local development and tests.
+
+| Environment variable | Default | Effect |
+| --- | --- | --- |
+| `LLM_PROVIDER` | `echo` | Provider name: `echo`, `openai`, `openai-compatible`, `deepseek`, `qwen`, `dashscope`, `ollama` |
+| `LLM_MODEL` | `echo` | Model name |
+| `LLM_BASE_URL` | empty | Provider API base URL. OpenAI-compatible defaults to `https://api.openai.com/v1`; Ollama defaults to `http://127.0.0.1:11434` |
+| `LLM_API_KEY` | empty | API key for OpenAI-compatible providers |
+| `LLM_TIMEOUT_SECONDS` | `30` | Request timeout |
+| `LLM_TEMPERATURE` | `0.7` | Sampling temperature |
+| `LLM_TOP_P` | `1.0` | Nucleus sampling parameter |
+| `LLM_TOP_K` | `0` | Top-k sampling parameter. `0` means the parameter is not sent |
+| `LLM_MAX_TOKENS` | `1024` | Maximum output tokens |
+| `LLM_ENABLE_THINKING` | `false` | Whether to send `enable_thinking=true` to compatible providers |
+| `LLM_SHOW_REASONING` | `false` | Whether to include provider-returned `reasoning_content` / `reasoning` in responses |
+
+OpenAI-compatible example:
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your-api-key
+LLM_TOP_P=0.9
+LLM_TOP_K=40
+LLM_ENABLE_THINKING=false
+LLM_SHOW_REASONING=false
+```
+
+Ollama example:
+
+```env
+LLM_PROVIDER=ollama
+LLM_MODEL=qwen2.5:7b
+LLM_BASE_URL=http://127.0.0.1:11434
+LLM_TOP_P=0.9
+LLM_TOP_K=40
+```
+
+When calling `/api/agent/run`, pass `system_prompt` in `metadata`. You can also set `agent` to `llm` or `echo`.
 
 ### Nacos service names
 

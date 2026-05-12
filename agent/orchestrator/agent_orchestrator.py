@@ -8,7 +8,10 @@ class AgentOrchestrator:
         self._registry = registry or AgentRegistry()
 
     async def run(self, request: AgentRunRequest) -> AgentRunResponse:
-        agent = self._registry.get("echo")
+        agent_name = request.metadata.get("agent", "llm")
+        if not isinstance(agent_name, str):
+            agent_name = "llm"
+        agent = self._registry.get(agent_name)
         context = AgentContext(
             session_id=request.session_id,
             user_input=request.user_input,

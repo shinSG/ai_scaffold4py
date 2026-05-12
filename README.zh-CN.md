@@ -10,6 +10,7 @@
 - Agent 编排骨架
 - MCP、A2A、ACP 协议服务端点与适配器
 - 可选的 HTTP、MCP、A2A、ACP 独立 server，并支持分别向 Nacos 注册
+- LLM Provider 抽象，内置 echo、OpenAI 兼容接口和 Ollama
 - RocketMQ / RabbitMQ 的 MQ 抽象
 - SSE / WebSocket 流式接口
 - RAG / Prompt / Memory 扩展点
@@ -116,6 +117,49 @@ FastAPI 生命周期会在启动时自动注册已启用服务，在关闭时自
 - `NACOS_REGISTER_ACP_ENABLED=true` 使用 `NACOS_ACP_SERVICE_NAME` 或 `{NACOS_SERVICE_NAME}-acp`
 
 当某个 server 被禁用时，即使对应 `NACOS_REGISTER_*_ENABLED=true` 也不会注册。
+
+## LLM Provider
+
+Agent 默认通过 `LLM_PROVIDER` 选择模型提供方。未配置时使用 `echo`，方便本地开发和测试。
+
+| 环境变量 | 默认值 | 作用 |
+| --- | --- | --- |
+| `LLM_PROVIDER` | `echo` | Provider 名称：`echo`、`openai`、`openai-compatible`、`deepseek`、`qwen`、`dashscope`、`ollama` |
+| `LLM_MODEL` | `echo` | 模型名称 |
+| `LLM_BASE_URL` | 空 | Provider API 地址，OpenAI 兼容接口默认使用 `https://api.openai.com/v1`，Ollama 默认使用 `http://127.0.0.1:11434` |
+| `LLM_API_KEY` | 空 | OpenAI 兼容接口鉴权密钥 |
+| `LLM_TIMEOUT_SECONDS` | `30` | 请求超时时间 |
+| `LLM_TEMPERATURE` | `0.7` | 采样温度 |
+| `LLM_TOP_P` | `1.0` | nucleus sampling 参数 |
+| `LLM_TOP_K` | `0` | top-k 采样参数，`0` 表示不传该参数 |
+| `LLM_MAX_TOKENS` | `1024` | 最大输出 token 数 |
+| `LLM_ENABLE_THINKING` | `false` | 是否向兼容接口传递 `enable_thinking=true` |
+| `LLM_SHOW_REASONING` | `false` | 是否在响应中展示 provider 返回的 `reasoning_content` / `reasoning` |
+
+OpenAI 兼容接口示例：
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your-api-key
+LLM_TOP_P=0.9
+LLM_TOP_K=40
+LLM_ENABLE_THINKING=false
+LLM_SHOW_REASONING=false
+```
+
+Ollama 示例：
+
+```env
+LLM_PROVIDER=ollama
+LLM_MODEL=qwen2.5:7b
+LLM_BASE_URL=http://127.0.0.1:11434
+LLM_TOP_P=0.9
+LLM_TOP_K=40
+```
+
+调用 `/api/agent/run` 时，可以在 `metadata` 中传入 `system_prompt`，也可以通过 `agent` 指定 `llm` 或 `echo`。
 
 ### Nacos 服务名
 

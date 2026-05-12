@@ -1,0 +1,5 @@
+template_root: scripts/templates/project
+binary_patterns: []
+text_patterns:
+  - "**/*.py.j2"
+  - "**/*.md.j2"

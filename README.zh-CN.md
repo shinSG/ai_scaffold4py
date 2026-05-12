@@ -160,6 +160,30 @@ LLM_TOP_K=40
 ```
 
 调用 `/api/agent/run` 时，可以在 `metadata` 中传入 `system_prompt`，也可以通过 `agent` 指定 `llm` 或 `echo`。
+模型参数也可以通过 `llm_options` 在 API 请求中临时覆盖，所有字段都不是必填。
+
+```json
+{
+	"session_id": "demo",
+	"user_input": "你好",
+	"llm_options": {
+		"model": "qwen-plus",
+		"temperature": 0.7,
+		"top_p": 0.9,
+		"top_k": 40,
+		"max_tokens": 1024,
+		"enable_thinking": true,
+		"show_reasoning": false,
+		"extra": {
+			"presence_penalty": 0.2
+		}
+	},
+	"metadata": {
+		"agent": "llm",
+		"system_prompt": "你是一个简洁的助手"
+	}
+}
+```
 
 ### Nacos 服务名
 

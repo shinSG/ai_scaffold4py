@@ -470,12 +470,26 @@ LLM_TOP_K=40
 {
   "session_id": "demo",
   "user_input": "你好",
+  "llm_options": {
+    "model": "qwen-plus",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 40,
+    "max_tokens": 1024,
+    "enable_thinking": true,
+    "show_reasoning": false,
+    "extra": {
+      "presence_penalty": 0.2
+    }
+  },
   "metadata": {
     "agent": "llm",
     "system_prompt": "你是一个简洁的助手"
   }
 }
 ```
+
+`llm_options` 中所有字段都不是必填。未传入时使用环境变量配置；传入时只覆盖当前请求。
 
 ## 13. MQ 扩展
 

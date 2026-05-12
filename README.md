@@ -153,6 +153,30 @@ LLM_TOP_K=40
 ```
 
 When calling `/api/agent/run`, pass `system_prompt` in `metadata`. You can also set `agent` to `llm` or `echo`.
+Model parameters can also be overridden per API request with `llm_options`; all fields are optional.
+
+```json
+{
+	"session_id": "demo",
+	"user_input": "hello",
+	"llm_options": {
+		"model": "qwen-plus",
+		"temperature": 0.7,
+		"top_p": 0.9,
+		"top_k": 40,
+		"max_tokens": 1024,
+		"enable_thinking": true,
+		"show_reasoning": false,
+		"extra": {
+			"presence_penalty": 0.2
+		}
+	},
+	"metadata": {
+		"agent": "llm",
+		"system_prompt": "You are a concise assistant."
+	}
+}
+```
 
 ### Nacos service names
 

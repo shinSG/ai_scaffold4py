@@ -1,7 +1,7 @@
 import pytest
 
-from protocols.acp.adapter import ACPAdapter
-from protocols.acp.contracts import ACPRequest
+from agent_scaffold.protocols.acp.adapter import ACPAdapter
+from agent_scaffold.protocols.acp.contracts import ACPRequest
 
 
 @pytest.mark.asyncio

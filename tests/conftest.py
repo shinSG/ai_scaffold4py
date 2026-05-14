@@ -6,10 +6,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+src_dir = ROOT_DIR / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
 
-from app.main import app
+from agent_scaffold.api.main import app
 
 
 @pytest.fixture()

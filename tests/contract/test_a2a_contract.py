@@ -1,7 +1,7 @@
 import pytest
 
-from protocols.a2a.adapter import A2AAdapter
-from protocols.a2a.contracts import A2ARequest
+from agent_scaffold.protocols.a2a.adapter import A2AAdapter
+from agent_scaffold.protocols.a2a.contracts import A2ARequest
 
 
 @pytest.mark.asyncio

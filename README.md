@@ -6,8 +6,8 @@ A baseline Agent service scaffold built with FastAPI.
 
 ## Features
 
-- FastAPI app with layered structure
-- Agent orchestration skeleton
+- FastAPI app with layered structure (src layout)
+- Agent orchestration with tools and callbacks
 - Service endpoints and adapters for MCP, A2A and ACP
 - Optional HTTP, MCP, A2A and ACP servers with independent Nacos registration
 - LLM provider abstraction with echo, OpenAI-compatible and Ollama providers
@@ -19,9 +19,9 @@ A baseline Agent service scaffold built with FastAPI.
 ## Quick Start
 
 ```bash
-pip install -r requirements/base.txt
+pip install -e .
 cp .env.example .env
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn agent_scaffold.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Full usage guide
@@ -38,78 +38,44 @@ See [docs/USAGE.md](docs/USAGE.md) for the complete scaffold usage guide, includ
 - GET /api/stream/sse
 - WS /api/stream/ws
 
+## Project Structure
+
+```text
+src/agent_scaffold/           # Main package (src layout)
+├── core/                    # Config, exceptions, logging, events
+├── agent/                   # Agent abstractions, tools, callbacks, orchestration
+│   ├── abstractions/        # BaseAgent, AgentContext
+│   ├── agents/              # EchoAgent, LLMAgent
+│   ├── tools/               # Tool system (BaseTool, ToolRegistry, builtins)
+│   ├── callbacks/           # Callback hooks (BaseCallback, CallbackManager)
+│   ├── orchestrator/        # AgentOrchestrator
+│   └── registry/            # AgentRegistry
+├── protocols/               # MCP, A2A, ACP adapters, contracts, handlers
+├── infra/                   # LLM, MQ, Nacos, RAG adapters
+├── memory/                  # Session and long-term memory
+├── prompts/                 # Prompt registry and loader
+├── streaming/               # SSE and WebSocket streaming
+└── api/                     # FastAPI application layer
+    ├── handlers/            # HTTP route handlers
+    ├── models/              # Request/response models
+    ├── services/            # Business logic services
+    ├── middleware/           # Error handler, request ID
+    ├── main.py              # FastAPI app entry point
+    ├── servers.py           # Server definitions and switches
+    └── lifespan.py          # Startup/shutdown lifecycle
+tests/                       # Unit, integration, and contract tests
+scripts/                     # Project generation script and templates
+```
+
 ## Service development model
 
 The application uses a layered FastAPI structure. New business services should follow this flow:
 
-1. Define request/response models in `app/model/` or protocol contracts in `protocols/<protocol>/contracts.py`.
-2. Implement protocol or business logic in `app/service/` or `protocols/<protocol>/adapter.py`.
-3. Expose HTTP routes in `app/handler/`.
-4. Export routers from `app/handler/__init__.py`.
-5. Mount routers in `app/main.py`, usually controlled by server switches from `app/servers.py`.
-
-Current built-in services:
-
-| Server | Purpose | Route | Implementation entry |
-| --- | --- | --- | --- |
-| HTTP | Health, agent run, SSE and WebSocket APIs | `/health`, `/api/agent/run`, `/api/stream/*` | `app/handler/*_handler.py` |
-| MCP | MCP protocol request handling | `/api/protocol/mcp` | `protocols/mcp/adapter.py` |
-| A2A | A2A protocol request handling | `/api/protocol/a2a` | `protocols/a2a/adapter.py` |
-| ACP | ACP protocol request handling | `/api/protocol/acp` | `protocols/acp/adapter.py` |
-
-### Protocol service development
-
-MCP, A2A and ACP are implemented as independent protocol servers over the same FastAPI runtime:
-
-- Protocol contracts live in `protocols/<protocol>/contracts.py`.
-- Protocol adapters live in `protocols/<protocol>/adapter.py`.
-- `app/service/protocol_service.py` dispatches requests to each protocol adapter.
-- `app/handler/protocol_handler.py` exposes separate routers for MCP, A2A and ACP.
-- `app/main.py` mounts each protocol router only when the corresponding server is enabled.
-
-To add a new protocol service, add a new protocol package under `protocols/`, add a service dispatch method, create a router in `app/handler/`, then add a server definition in `app/servers.py` so it can be enabled and registered independently.
-
-### Server switches
-
-Each server can be enabled or disabled independently. Disabled servers do not mount their routes and are not registered to Nacos.
-
-| Environment variable | Default | Effect |
-| --- | --- | --- |
-| `HTTP_SERVER_ENABLED` | `true` | Enables HTTP business routes such as agent and stream APIs |
-| `MCP_SERVER_ENABLED` | `true` | Enables `/api/protocol/mcp` |
-| `A2A_SERVER_ENABLED` | `true` | Enables `/api/protocol/a2a` |
-| `ACP_SERVER_ENABLED` | `true` | Enables `/api/protocol/acp` |
-
-## Nacos registration
-
-The FastAPI lifespan automatically registers enabled services to Nacos on startup and deregisters them on shutdown.
-
-Registration flow:
-
-1. `app/lifespan.py` calls `get_nacos_registrations()` during startup.
-2. `app/servers.py` returns all server definitions whose server switch and Nacos registration switch are both enabled.
-3. `NacosRegistrar.register_services()` registers each server as an independent Nacos service.
-4. `NacosClient.register()` sends `POST /nacos/v1/ns/instance` to Nacos.
-5. During shutdown, `NacosRegistrar.deregister_services()` deregisters the services in reverse order with `DELETE /nacos/v1/ns/instance`.
-
-Global Nacos configuration:
-
-- `NACOS_ENABLED=true`
-- `NACOS_SERVER_ADDR=127.0.0.1:8848`
-- `NACOS_SERVICE_NAME=agent-scaffold4py`
-- `NACOS_SERVICE_IP=127.0.0.1`
-- `APP_PORT=8000`
-
-Set `NACOS_FAIL_FAST=true` if startup should fail when Nacos registration fails.
-
-Each server can also be registered to Nacos independently:
-
-- `NACOS_REGISTER_HTTP_ENABLED=true` registers `NACOS_HTTP_SERVICE_NAME` or `NACOS_SERVICE_NAME`
-- `NACOS_REGISTER_MCP_ENABLED=true` registers `NACOS_MCP_SERVICE_NAME` or `{NACOS_SERVICE_NAME}-mcp`
-- `NACOS_REGISTER_A2A_ENABLED=true` registers `NACOS_A2A_SERVICE_NAME` or `{NACOS_SERVICE_NAME}-a2a`
-- `NACOS_REGISTER_ACP_ENABLED=true` registers `NACOS_ACP_SERVICE_NAME` or `{NACOS_SERVICE_NAME}-acp`
-
-If a server is disabled, its route is not mounted and it is not registered even when the corresponding Nacos registration switch is enabled.
+1. Define request/response models in `src/agent_scaffold/api/models/` or protocol contracts in `protocols/<protocol>/contracts.py`.
+2. Implement protocol or business logic in `src/agent_scaffold/api/services/` or `protocols/<protocol>/adapter.py`.
+3. Expose HTTP routes in `src/agent_scaffold/api/handlers/`.
+4. Export routers from `src/agent_scaffold/api/handlers/__init__.py`.
+5. Mount routers in `src/agent_scaffold/api/main.py`, usually controlled by server switches from `src/agent_scaffold/api/servers.py`.
 
 ## LLM Provider
 
@@ -119,124 +85,10 @@ Agents use `LLM_PROVIDER` to select the model provider. The default is `echo` fo
 | --- | --- | --- |
 | `LLM_PROVIDER` | `echo` | Provider name: `echo`, `openai`, `openai-compatible`, `deepseek`, `qwen`, `dashscope`, `ollama` |
 | `LLM_MODEL` | `echo` | Model name |
-| `LLM_BASE_URL` | empty | Provider API base URL. OpenAI-compatible defaults to `https://api.openai.com/v1`; Ollama defaults to `http://127.0.0.1:11434` |
+| `LLM_BASE_URL` | empty | Provider API base URL |
 | `LLM_API_KEY` | empty | API key for OpenAI-compatible providers |
-| `LLM_TIMEOUT_SECONDS` | `30` | Request timeout |
 | `LLM_TEMPERATURE` | `0.7` | Sampling temperature |
-| `LLM_TOP_P` | `1.0` | Nucleus sampling parameter |
-| `LLM_TOP_K` | `0` | Top-k sampling parameter. `0` means the parameter is not sent |
 | `LLM_MAX_TOKENS` | `1024` | Maximum output tokens |
-| `LLM_ENABLE_THINKING` | `false` | Whether to send `enable_thinking=true` to compatible providers |
-| `LLM_SHOW_REASONING` | `false` | Whether to include provider-returned `reasoning_content` / `reasoning` in responses |
-
-OpenAI-compatible example:
-
-```env
-LLM_PROVIDER=openai-compatible
-LLM_MODEL=gpt-4o-mini
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=your-api-key
-LLM_TOP_P=0.9
-LLM_TOP_K=40
-LLM_ENABLE_THINKING=false
-LLM_SHOW_REASONING=false
-```
-
-Ollama example:
-
-```env
-LLM_PROVIDER=ollama
-LLM_MODEL=qwen2.5:7b
-LLM_BASE_URL=http://127.0.0.1:11434
-LLM_TOP_P=0.9
-LLM_TOP_K=40
-```
-
-When calling `/api/agent/run`, pass `system_prompt` in `metadata`. You can also set `agent` to `llm` or `echo`.
-Model parameters can also be overridden per API request with `llm_options`; all fields are optional.
-
-```json
-{
-	"session_id": "demo",
-	"user_input": "hello",
-	"llm_options": {
-		"model": "qwen-plus",
-		"temperature": 0.7,
-		"top_p": 0.9,
-		"top_k": 40,
-		"max_tokens": 1024,
-		"enable_thinking": true,
-		"show_reasoning": false,
-		"extra": {
-			"presence_penalty": 0.2
-		}
-	},
-	"metadata": {
-		"agent": "llm",
-		"system_prompt": "You are a concise assistant."
-	}
-}
-```
-
-### Nacos service names
-
-Each server is registered as a separate Nacos service. You can override every service name explicitly:
-
-| Server | Service name variable | Default when unset |
-| --- | --- | --- |
-| HTTP | `NACOS_HTTP_SERVICE_NAME` | `NACOS_SERVICE_NAME` |
-| MCP | `NACOS_MCP_SERVICE_NAME` | `{NACOS_SERVICE_NAME}-mcp` |
-| A2A | `NACOS_A2A_SERVICE_NAME` | `{NACOS_SERVICE_NAME}-a2a` |
-| ACP | `NACOS_ACP_SERVICE_NAME` | `{NACOS_SERVICE_NAME}-acp` |
-
-### Nacos registration metadata
-
-Every registered instance includes common metadata from `NACOS_METADATA` plus generated server metadata:
-
-| Metadata key | Meaning |
-| --- | --- |
-| `app_name` | Application name from `APP_NAME` |
-| `app_version` | Application version from `APP_VERSION` |
-| `app_env` | Runtime environment from `APP_ENV` |
-| `server_name` | Internal server name, for example `mcp-server` |
-| `protocol` | Registered protocol: `http`, `mcp`, `a2a` or `acp` |
-| `endpoint` | Main endpoint for this server |
-| `routes` | HTTP server route summary, only for the HTTP server |
-
-### Registration examples
-
-Register only the MCP protocol service:
-
-```env
-HTTP_SERVER_ENABLED=false
-MCP_SERVER_ENABLED=true
-A2A_SERVER_ENABLED=false
-ACP_SERVER_ENABLED=false
-
-NACOS_ENABLED=true
-NACOS_REGISTER_MCP_ENABLED=true
-NACOS_MCP_SERVICE_NAME=my-agent-mcp
-```
-
-Expose all routes locally, but register only HTTP and ACP to Nacos:
-
-```env
-HTTP_SERVER_ENABLED=true
-MCP_SERVER_ENABLED=true
-A2A_SERVER_ENABLED=true
-ACP_SERVER_ENABLED=true
-
-NACOS_REGISTER_HTTP_ENABLED=true
-NACOS_REGISTER_MCP_ENABLED=false
-NACOS_REGISTER_A2A_ENABLED=false
-NACOS_REGISTER_ACP_ENABLED=true
-```
-
-Disable all Nacos registration while keeping local routes available:
-
-```env
-NACOS_ENABLED=false
-```
 
 ## Generate project template
 

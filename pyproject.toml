@@ -1,0 +1,60 @@
+[project]
+name = "agent-scaffold4py"
+version = "0.1.0"
+description = "A baseline Agent service scaffold built with FastAPI"
+requires-python = ">=3.11"
+readme = "README.md"
+license = "MIT"
+
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.11.0",
+    "pydantic-settings>=2.10.0",
+    "python-dotenv>=1.1.0",
+    "httpx>=0.27.0",
+    "sse-starlette>=2.2.1",
+    "jinja2>=3.1.4",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "greenlet>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.12.0",
+    "black>=25.0.0",
+    "mypy>=1.17.0",
+]
+test = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.1.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+agent-scaffold = "scripts.create_project:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

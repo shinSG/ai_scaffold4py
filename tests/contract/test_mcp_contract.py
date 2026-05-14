@@ -1,7 +1,7 @@
 import pytest
 
-from protocols.mcp.adapter import MCPAdapter
-from protocols.mcp.contracts import MCPRequest
+from agent_scaffold.protocols.mcp.adapter import MCPAdapter
+from agent_scaffold.protocols.mcp.contracts import MCPRequest
 
 
 @pytest.mark.asyncio

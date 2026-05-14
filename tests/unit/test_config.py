@@ -1,4 +1,4 @@
-from core.config import get_settings
+from agent_scaffold.core.config import get_settings
 
 
 def test_get_settings() -> None:

@@ -1,7 +1,7 @@
 import pytest
 
-from app.servers import ServerDefinition
-from integrations.nacos.registrar import NacosRegistrar
+from agent_scaffold.api.servers import ServerDefinition
+from agent_scaffold.infra.nacos.registrar import NacosRegistrar
 
 
 class FakeNacosClient:

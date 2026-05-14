@@ -1,12 +1,12 @@
 import pytest
 
-from core.config import get_settings
-from core.exceptions import ConfigurationError
-from app.model.agent import AgentRunRequest
-from integrations.llm.echo_provider import EchoLLMProvider
-from integrations.llm.factory import get_llm_provider
-from integrations.llm.ollama_provider import OllamaProvider
-from integrations.llm.openai_compatible_provider import OpenAICompatibleProvider
+from agent_scaffold.core.config import get_settings
+from agent_scaffold.core.exceptions import ConfigurationError
+from agent_scaffold.api.models.agent import AgentRunRequest
+from agent_scaffold.infra.llm.echo_provider import EchoLLMProvider
+from agent_scaffold.infra.llm.factory import get_llm_provider
+from agent_scaffold.infra.llm.ollama_provider import OllamaProvider
+from agent_scaffold.infra.llm.openai_compatible_provider import OpenAICompatibleProvider
 
 
 def test_get_default_llm_provider(monkeypatch: pytest.MonkeyPatch) -> None:

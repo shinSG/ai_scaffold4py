@@ -1,8 +1,8 @@
 import pytest
 
-from agent.orchestrator.agent_orchestrator import AgentOrchestrator
-from app.schemas.agent import AgentRunRequest
-from core.config import get_settings
+from agent_scaffold.agent.orchestrator.agent_orchestrator import AgentOrchestrator
+from agent_scaffold.api.models.agent import AgentRunRequest
+from agent_scaffold.core.config import get_settings
 
 
 @pytest.mark.asyncio

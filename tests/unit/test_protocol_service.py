@@ -1,9 +1,9 @@
 import pytest
 
-from app.service.protocol_service import ProtocolService
-from protocols.a2a.contracts import A2ARequest
-from protocols.acp.contracts import ACPRequest
-from protocols.mcp.contracts import MCPRequest
+from agent_scaffold.api.services.protocol_service import ProtocolService
+from agent_scaffold.protocols.a2a.contracts import A2ARequest
+from agent_scaffold.protocols.acp.contracts import ACPRequest
+from agent_scaffold.protocols.mcp.contracts import MCPRequest
 
 
 @pytest.mark.asyncio

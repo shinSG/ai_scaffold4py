@@ -1,5 +1,5 @@
-from core.config import Settings
-from app.servers import get_app_servers, get_enabled_protocols, get_nacos_registrations
+from agent_scaffold.core.config import Settings
+from agent_scaffold.api.servers import get_app_servers, get_enabled_protocols, get_nacos_registrations
 
 
 def test_app_servers_can_be_enabled_and_registered_independently() -> None:

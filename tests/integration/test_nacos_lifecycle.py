@@ -1,6 +1,6 @@
 import pytest
 
-from integrations.nacos.registrar import NacosRegistrar
+from agent_scaffold.infra.nacos.registrar import NacosRegistrar
 
 
 @pytest.mark.asyncio

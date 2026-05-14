@@ -7,48 +7,76 @@
 本项目是一个基于 FastAPI 的 Python Agent 服务脚手架，提供以下基础能力：
 
 - FastAPI Web 服务结构
-- Agent 编排骨架
+- Agent 编排骨架（工具系统、回调钩子）
 - HTTP 业务接口
 - MCP/A2A/ACP 协议服务接口
 - SSE/WebSocket 流式输出
 - Nacos 服务注册、注销和发现抽象
 - MQ 抽象，预留 RabbitMQ/RocketMQ 扩展点
 - LLM Provider 抽象，内置 echo、OpenAI 兼容接口和 Ollama
-- RAG、Prompt、Memory 扩展点
+- Embedding 模型抽象，内置 local（hash）和 OpenAI 兼容接口
+- 向量存储抽象，内置内存存储和 Chroma
+- 文档加载器抽象，内置 text、PDF、web 加载器
+- 缓存抽象，内置内存缓存（带 TTL）和 Redis
+- RAG 适配器，集成 embedding + vectorstore
+- Prompt、Memory 扩展点
 - 项目生成脚本
 - 单元测试与集成测试结构
 
 ## 2. 目录结构说明
 
 ```text
-agent/                  Agent 抽象、注册与编排
-app/                    FastAPI 应用层
-  handler/              HTTP Router / Handler
-  service/              应用服务层
-  model/                API 请求响应模型
-  middleware/           中间件
-  lifespan.py           应用启动/关闭生命周期
-  main.py               FastAPI 应用入口
-  servers.py            HTTP/MCP/A2A/ACP server 定义与开关
-core/                   配置、异常、日志、容器等核心模块
-integrations/           外部集成
-  nacos/                Nacos 注册、注销、发现
-  mq/                   MQ 抽象与实现占位
-  rag/                  RAG 抽象与实现占位
-memory/                 会话记忆和长期记忆占位
-prompts/                Prompt 加载和注册
-protocols/              MCP/A2A/ACP 协议契约与 adapter
-streaming/              SSE/WebSocket 流式能力
-tests/                  测试目录
-scripts/                项目生成脚本与模板
-requirements/           分环境依赖
+src/agent_scaffold/           # 主包（src layout）
+├── core/                    # 配置、异常、日志、事件总线
+├── agent/                   # Agent 抽象、工具、回调、编排
+│   ├── abstractions/        # BaseAgent、AgentContext
+│   ├── agents/              # EchoAgent、LLMAgent
+│   ├── tools/               # 工具系统（BaseTool、ToolRegistry、内置工具）
+│   ├── callbacks/           # 回调钩子（BaseCallback、CallbackManager）
+│   ├── orchestrator/        # AgentOrchestrator
+│   └── registry/            # AgentRegistry
+├── protocols/               # MCP、A2A、ACP 适配器、契约、处理器
+│   ├── base.py              # ProtocolAdapter ABC
+│   ├── mcp/                 # contracts.py + adapter.py + handler.py
+│   ├── a2a/
+│   └── acp/
+├── infra/                   # 基础设施适配器
+│   ├── llm/                 # LLM Provider 抽象与实现
+│   ├── embedding/           # Embedding 模型抽象与实现
+│   ├── vectorstore/         # 向量存储抽象与实现
+│   ├── loader/              # 文档加载器抽象与实现
+│   ├── cache/               # 缓存抽象与实现
+│   ├── db/                  # 数据库 ORM 抽象与实现（SQLAlchemy）
+│   ├── nacos/               # Nacos 注册、注销、发现
+│   ├── mq/                  # MQ 抽象与实现占位
+│   └── rag/                 # RAG 适配器（集成 embedding + vectorstore）
+├── memory/                  # 会话记忆和长期记忆
+├── prompts/                 # Prompt 加载和注册
+├── streaming/               # SSE/WebSocket 流式能力
+└── api/                     # FastAPI 应用层
+    ├── handlers/            # HTTP 路由处理器
+    ├── models/              # 请求响应模型
+    ├── services/            # 业务逻辑服务
+    ├── middleware/           # 中间件
+    ├── main.py              # FastAPI 应用入口
+    ├── servers.py           # Server 定义与开关
+    └── lifespan.py          # 应用启动/关闭生命周期
+tests/                       # 测试目录（unit/integration/contract）
+scripts/                     # 项目生成脚本与模板
+requirements/                # 分环境依赖
 ```
 
 ## 3. 环境准备
 
 建议使用 Python 3.11+。
 
-安装基础依赖：
+安装项目（editable 模式）：
+
+```bash
+pip install -e .
+```
+
+或安装基础依赖：
 
 ```bash
 pip install -r requirements/base.txt
@@ -77,7 +105,7 @@ cp .env.example .env
 开发模式启动：
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn agent_scaffold.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 访问健康检查：
@@ -112,18 +140,18 @@ curl http://127.0.0.1:8000/health
 
 推荐步骤：
 
-1. 在 `app/model/` 定义请求和响应模型。
-2. 在 `app/service/` 实现业务逻辑。
-3. 在 `app/handler/` 创建路由。
-4. 在 `app/handler/__init__.py` 导出 router。
-5. 在 `app/main.py` 挂载 router。
+1. 在 `src/agent_scaffold/api/models/` 定义请求和响应模型。
+2. 在 `src/agent_scaffold/api/services/` 实现业务逻辑。
+3. 在 `src/agent_scaffold/api/handlers/` 创建路由。
+4. 在 `src/agent_scaffold/api/handlers/__init__.py` 导出 router。
+5. 在 `src/agent_scaffold/api/main.py` 挂载 router。
 
 示例开发路径：
 
 ```text
-app/model/example.py
-app/service/example_service.py
-app/handler/example_handler.py
+src/agent_scaffold/api/models/example.py
+src/agent_scaffold/api/services/example_service.py
+src/agent_scaffold/api/handlers/example.py
 ```
 
 ### 6.2 新增协议服务
@@ -131,8 +159,9 @@ app/handler/example_handler.py
 MCP/A2A/ACP 都按协议包开发：
 
 ```text
-protocols/<protocol>/contracts.py   协议请求/响应模型
-protocols/<protocol>/adapter.py     协议适配与处理逻辑
+src/agent_scaffold/protocols/<protocol>/contracts.py   协议请求/响应模型
+src/agent_scaffold/protocols/<protocol>/adapter.py     协议适配与处理逻辑
+src/agent_scaffold/protocols/<protocol>/handler.py     FastAPI 路由处理器
 ```
 
 当前已有：
@@ -143,20 +172,20 @@ protocols/a2a/
 protocols/acp/
 ```
 
-协议请求由 `app/service/protocol_service.py` 分发到对应 adapter，再由 `app/handler/protocol_handler.py` 暴露为 FastAPI 路由。
+协议请求由 `src/agent_scaffold/api/services/protocol_service.py` 分发到对应 adapter，再由 `src/agent_scaffold/api/handlers/protocol.py` 暴露为 FastAPI 路由。
 
 新增协议时，需要同时：
 
-1. 新增 `protocols/<new_protocol>/contracts.py`。
-2. 新增 `protocols/<new_protocol>/adapter.py`。
-3. 在 `app/service/protocol_service.py` 增加分发方法。
-4. 在 `app/handler/protocol_handler.py` 增加 router。
-5. 在 `app/servers.py` 增加 server 定义。
-6. 在 `app/main.py` 根据开关挂载 router。
+1. 新增 `src/agent_scaffold/protocols/<new_protocol>/contracts.py`。
+2. 新增 `src/agent_scaffold/protocols/<new_protocol>/adapter.py`。
+3. 新增 `src/agent_scaffold/protocols/<new_protocol>/handler.py`。
+4. 在 `src/agent_scaffold/api/services/protocol_service.py` 增加分发方法。
+5. 在 `src/agent_scaffold/api/servers.py` 增加 server 定义。
+6. 在 `src/agent_scaffold/api/main.py` 根据开关挂载 router。
 
 ## 7. Server 开关机制
 
-当前 HTTP/MCP/A2A/ACP 都被建模为独立 server，定义在 `app/servers.py`。
+当前 HTTP/MCP/A2A/ACP 都被建模为独立 server，定义在 `src/agent_scaffold/api/servers.py`。
 
 每个 server 都有两个层面的开关：
 
@@ -195,8 +224,8 @@ protocols/acp/
 
 应用启动时：
 
-1. FastAPI 执行 `app/lifespan.py` 中的 `app_lifespan()`。
-2. `get_nacos_registrations()` 从 `app/servers.py` 获取需要注册的 server。
+1. FastAPI 执行 `src/agent_scaffold/api/lifespan.py` 中的 `app_lifespan()`。
+2. `get_nacos_registrations()` 从 `src/agent_scaffold/api/servers.py` 获取需要注册的 server。
 3. 只有同时满足以下条件的 server 才会进入注册列表：
    - server 自身启用。
    - 对应 Nacos 注册开关启用。
@@ -322,17 +351,18 @@ POST /api/agent/run
 调用链：
 
 ```text
-app/handler/agent_handler.py
--> app/service/agent_service.py
--> agent/orchestrator/agent_orchestrator.py
+src/agent_scaffold/api/handlers/agent.py
+-> src/agent_scaffold/api/services/agent_service.py
+-> src/agent_scaffold/agent/orchestrator/agent_orchestrator.py
 ```
 
 推荐扩展方式：
 
-1. 在 `agent/abstractions/base_agent.py` 基于抽象定义 Agent 能力。
-2. 在 `agent/registry/agent_registry.py` 注册具体 Agent。
-3. 在 `agent/orchestrator/agent_orchestrator.py` 编排 Agent 执行流程。
-4. 在 `app/model/agent.py` 扩展请求和响应字段。
+1. 在 `src/agent_scaffold/agent/abstractions/base_agent.py` 基于抽象定义 Agent 能力。
+2. 在 `src/agent_scaffold/agent/agents/` 创建具体 Agent 实现。
+3. 在 `src/agent_scaffold/agent/registry/agent_registry.py` 注册具体 Agent。
+4. 在 `src/agent_scaffold/agent/orchestrator/agent_orchestrator.py` 编排 Agent 执行流程。
+5. 在 `src/agent_scaffold/api/models/agent.py` 扩展请求和响应字段。
 
 ## 11. 流式服务开发
 
@@ -344,10 +374,10 @@ app/handler/agent_handler.py
 调用链：
 
 ```text
-app/handler/stream_handler.py
--> app/service/stream_service.py
--> streaming/sse/emitter.py
--> streaming/websocket/connection_manager.py
+src/agent_scaffold/api/handlers/stream.py
+-> src/agent_scaffold/api/services/stream_service.py
+-> src/agent_scaffold/streaming/sse/emitter.py
+-> src/agent_scaffold/streaming/websocket/connection_manager.py
 ```
 
 适合用于：
@@ -363,14 +393,14 @@ app/handler/stream_handler.py
 Prompt 模板目录：
 
 ```text
-prompts/templates/
+src/agent_scaffold/prompts/templates/
 ```
 
 加载和注册逻辑：
 
 ```text
-prompts/loader.py
-prompts/registry.py
+src/agent_scaffold/prompts/loader.py
+src/agent_scaffold/prompts/registry.py
 ```
 
 ### 12.2 Memory
@@ -378,9 +408,9 @@ prompts/registry.py
 记忆模块位置：
 
 ```text
-memory/session_memory.py
-memory/long_term_memory.py
-memory/store.py
+src/agent_scaffold/memory/session_memory.py
+src/agent_scaffold/memory/long_term_memory.py
+src/agent_scaffold/memory/store.py
 ```
 
 可用于接入 Redis、数据库或向量存储。
@@ -390,23 +420,75 @@ memory/store.py
 RAG 抽象和 stub：
 
 ```text
-integrations/rag/ports.py
-integrations/rag/retriever_stub.py
-integrations/rag/adapter.py
+src/agent_scaffold/infra/rag/ports.py
+src/agent_scaffold/infra/rag/retriever_stub.py
+src/agent_scaffold/infra/rag/adapter.py
 ```
 
 可替换为真实向量库、知识库或检索服务。
 
-### 12.4 LLM Provider
+### 12.4 Database (ORM)
+
+数据库模块位于：
+
+```text
+src/agent_scaffold/infra/db/
+├── __init__.py          # 公开 API：Base, BaseModel, SQLAlchemyRepository, get_session, init_db, close_db
+├── session.py           # 异步引擎、Session 工厂、get_session 上下文管理器
+├── models.py            # BaseModel（含 UUID 主键、created_at、updated_at）
+├── repository.py        # SQLAlchemyRepository（通用 CRUD）
+└── ports.py             # BaseRepository ABC（抽象接口）
+```
+
+基于 SQLAlchemy 2.0 + async，内置 SQLite (aiosqlite) 支持，可切换 PostgreSQL/MySQL。
+
+配置：
+
+```env
+DB_URL=sqlite+aiosqlite:///./agent_scaffold.db
+DB_ECHO=false
+```
+
+PostgreSQL 示例：
+
+```env
+DB_URL=postgresql+asyncpg://user:pass@localhost:5432/mydb
+```
+
+使用方式：
+
+```python
+from agent_scaffold.infra.db import BaseModel, SQLAlchemyRepository, get_session, init_db
+
+# 定义模型
+class Article(BaseModel):
+    __tablename__ = "articles"
+    title: str = Column(String(200), nullable=False)
+
+# 初始化表
+await init_db()
+
+# CRUD 操作
+async with get_session() as session:
+    repo = SQLAlchemyRepository(Article, session)
+    article = await repo.create(Article(title="Hello"))
+    fetched = await repo.get(article.id)
+    all_articles = await repo.get_multi(limit=10)
+    await repo.update(article.id, Article(title="Updated"))
+    await repo.delete(article.id)
+    count = await repo.count()
+```
+
+### 12.5 LLM Provider
 
 LLM 抽象位于：
 
 ```text
-integrations/llm/ports.py
-integrations/llm/factory.py
-integrations/llm/echo_provider.py
-integrations/llm/openai_compatible_provider.py
-integrations/llm/ollama_provider.py
+src/agent_scaffold/infra/llm/ports.py
+src/agent_scaffold/infra/llm/factory.py
+src/agent_scaffold/infra/llm/echo_provider.py
+src/agent_scaffold/infra/llm/openai_compatible_provider.py
+src/agent_scaffold/infra/llm/ollama_provider.py
 ```
 
 默认 agent 使用 `LLM_PROVIDER` 创建 provider。未配置时使用 `echo`，不会请求外部服务。
@@ -496,15 +578,15 @@ LLM_TOP_K=40
 MQ 抽象位于：
 
 ```text
-integrations/mq/ports.py
-integrations/mq/factory.py
+src/agent_scaffold/infra/mq/ports.py
+src/agent_scaffold/infra/mq/factory.py
 ```
 
 当前预留实现目录：
 
 ```text
-integrations/mq/rabbitmq/
-integrations/mq/rocketmq/
+src/agent_scaffold/infra/mq/rabbitmq/
+src/agent_scaffold/infra/mq/rocketmq/
 ```
 
 通过环境变量选择后端：
@@ -572,7 +654,7 @@ mypy .
 也可以先做 Python 语法编译检查：
 
 ```bash
-python -m compileall app core integrations protocols tests
+python -m compileall src/
 ```
 
 ## 17. 推荐开发流程
@@ -580,11 +662,11 @@ python -m compileall app core integrations protocols tests
 1. 从 `.env.example` 复制 `.env`。
 2. 根据需要启用或关闭 HTTP/MCP/A2A/ACP server。
 3. 根据部署环境配置 Nacos。
-4. 在 `app/model/` 定义业务模型。
-5. 在 `app/service/` 实现业务逻辑。
-6. 在 `app/handler/` 暴露接口。
-7. 如果是协议能力，在 `protocols/` 中实现契约和 adapter。
-8. 如需服务发现，在 `app/servers.py` 中补充 server 定义和 metadata。
+4. 在 `src/agent_scaffold/api/models/` 定义业务模型。
+5. 在 `src/agent_scaffold/api/services/` 实现业务逻辑。
+6. 在 `src/agent_scaffold/api/handlers/` 暴露接口。
+7. 如果是协议能力，在 `src/agent_scaffold/protocols/` 中实现契约和 adapter。
+8. 如需服务发现，在 `src/agent_scaffold/api/servers.py` 中补充 server 定义和 metadata。
 9. 增加测试。
 10. 运行 `pytest -q` 验证。
 

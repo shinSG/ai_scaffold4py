@@ -1,7 +1,7 @@
 import json
 
-from core.config import Settings
-from integrations.nacos.client import NacosClient
+from agent_scaffold.core.config import Settings
+from agent_scaffold.infra.nacos.client import NacosClient
 
 
 def test_nacos_client_builds_instance_params() -> None:
